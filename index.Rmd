@@ -1,0 +1,162 @@
+---
+title: "Análise sobre perfis de pobreza e extrema pobreza da população brasileira"
+author: "Mariana Almeida e Pedro Romani"
+date: "16 de outubro de 2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r}
+library(tidyverse) 
+library(srvyr)
+library(PNADcIBGE)
+library(knitr)
+
+dadosPNADc1 = get_pnadc(year = 2017, interview = 1, design = FALSE)
+
+dadosPNADc1$regiao <- as.numeric(substr(dadosPNADc1$UF, 1, 1))
+
+desenho <- dadosPNADc1 %>%
+  as_survey_design(ids = "UPA", strata = "Estrato", weights = V1032)
+```
+
+## Critérios de Pobreza
+
+Este trabalho tem a intenção de comparar a pobreza e a extrema pobreza no Brasil e em suas grandes regiões. Serão utilizadas duas formas de mensuração, ambas sob a ótica da renda domiciliar per capita. São elas:
+
+- A primeira referência será a Linha Administrativa do Programa Bolsa Família.
+
+- A segunda referência será a razão da renda sobre o salário mínimo.
+
+## Fontes dos dados
+
+Serão utilizadas as seguintes fontes de dados:
+
+- A Pesquisa Nacional por Amostra de Domicílios Contínua 2017 (PNAD Contínua), cujo produtor é o IBGE.
+
+- O Decreto nº 8.794 de 29 de junho de 2016, publicado pela Presidência da República, que estabelece o corte de renda para extrema pobreza e pobreza.
+
+## Uso das fontes de dados em relação aos diferentes critérios de pobreza
+
+- Na PNAD Contínua cada registro da base corresponde a uma pessoa.
+
+- Como base para o cálculo da Linha Administrativa do PBF será utilizada a variável VD5002 da PNAD Contínua, que determina a renda domiciliar per capita.
+
+- Para calcular a pobreza como razão do salário mínimo foi utilizada a variável VD5003 (faixa de salário correspondente ao respectivo registro da PNAD Contínua).
+
+## Pobreza e Pobreza Extrema a partir da Linha Administrativa do Programa Bolsa Fam?lia
+
+O Programa Bolsa Família (PBF) no ano de 2017 utilizava o corte de 85 reais domiciliar per capita como teto para determinar a extrema pobreza de uma família. 
+
+O teto da pobreza seria determinado pelo dobro disso, ou seja, 170 reais. Segundo esse padrão, para fins de gestão pública, todas as famílias com renda per capita que n?o atingem 85 reais recebem a complementação de renda que atinja esse valor. 
+
+As famílias que estão com renda per capita domicliar entre 85 e 170 reais podem se benericiar do Programa caso se insiram em algumas condiçõees.
+
+## Metodologia
+
+O arquivo base da PNAD Contínua 2017 será lido diretamente da URL do IBGE por meio do pacote 'PNAcIBGE'. O pacote 'dplyr será utilizado para tratamento da base e o pacote 'srvyr' será utilizado para expandir a amostra para a população. O pacote 'ggplot2' será utilizado para constuir os gráficos.
+
+Em síntese, a amostra (base original) será expandida para a população. Essa expansão será usada como fonte pars tratamento dos dados, ou seja, o cálculo da sproporções de pessoas na população com renda determinada por cada recorte. Os gráficos possibiltarão visualizar as proporções de Brasil e suas grandes regiões para fins de comparação. Po úlrimo, uma análise acerca das informações obtidas.
+
+
+```{r}
+brla <- desenho %>%
+  summarise(pobreza = 100*round(survey_mean(VD5002 <= 170 & VD5002 > 85, proportion = TRUE, na.rm = TRUE), 3),
+            extrema_pobreza = 100*round(survey_mean(VD5002 <= 85, proportion = TRUE, na.rm = TRUE), 3))
+
+regla <- desenho %>%
+  group_by(regiao) %>%
+  summarise(pobreza = 100*round(survey_mean(VD5002 <= 170 & VD5002 > 85, proportion = TRUE, na.rm = TRUE), 3),
+            extrema_pobreza = 100*round(survey_mean(VD5002 <= 85, proportion = TRUE, na.rm = TRUE), 3))
+
+brla <- brla %>%
+  mutate(regiao = "0") %>%
+  select(regiao, pobreza, extrema_pobreza)
+
+regla <- regla %>%
+  select(regiao, pobreza, extrema_pobreza)
+
+pobreza_la <- rbind(brla, regla)
+```
+
+
+***
+```{r}
+regiao2 <- c("Brasil", "N", "NE", "SE", "S", "CO")
+pobreza_la$regiao <- regiao2
+names(pobreza_la) <- c("Territorio", "Pobreza", "Pobreza Extrema")
+pobreza_la3 <- pobreza_la %>%
+  gather(Renda, Percentual, -Territorio)
+
+ggplot(data=pobreza_la3, aes(x = Territorio, y = Percentual, fill = Renda)) +
+  geom_bar(stat="identity") + 
+  ylim(0, 100) +
+  labs(title = "Critério Linha Administrativa do PBF") +
+   theme(plot.title = element_text(hjust = 0.5))  
+```
+
+
+## Pobreza e Pobreza Extrema a partir da faixas de salário mínimo da PNAD Contínua.
+
+A PNAD Contínua possui uma variável (VD5003) que categoriza a amostra em faixas de renda domiciliar per capita.
+
+Existem ao todo 7 faixas de renda medidas na PNAD Contínua com base no salário mínimo: at? 1/4, de 1/4 a 1/2, de 1/2 a 1, de 1 a 2, de 2 a 3, de 3 a 5 e acima de 5 salários mínimos.
+
+Como critério usado na PNAD Contínua, a pobreza extrema e a pobreza s?o consideradas como sendo, respectivamente, de 1/4 e 1/2 salário mínimo per capita no domicííio. 
+
+```{r}
+brsm <- desenho %>%
+  summarise(pobreza_sm = 100*round(survey_mean(VD5003 == "1", proportion = TRUE, na.rm = T), 3),
+            extrema_pobreza_sm = 100*round(survey_mean(VD5003 == "2", proportion = TRUE, na.rm = T), 3))
+
+regsm <- desenho %>%
+  group_by(regiao) %>%
+  summarise(pobreza_sm = 100*round(survey_mean(VD5003 == "1", proportion = TRUE, na.rm = T), 3),
+            extrema_pobreza_sm = 100*round(survey_mean(VD5003 == "2", proportion = TRUE, na.rm = T), 3))
+
+brsm <- brsm %>%
+  mutate(regiao = "0") %>%
+  select(regiao, pobreza_sm, extrema_pobreza_sm)
+
+regsm <- regsm %>%
+  select(regiao, pobreza_sm, extrema_pobreza_sm)
+
+pobreza_sm <- rbind(brsm, regsm)
+```
+
+
+***
+```{r}
+regiao3 <- c("Brasil", "Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
+pobreza_sm$regiao <- regiao3
+names(pobreza_sm) <- c("Territorio", "Pobreza", "Pobreza Extrema")
+pobreza_sm3 <- pobreza_sm %>%
+  gather(Renda, Percentual, -Territorio)
+
+ggplot(data=pobreza_sm3, aes(x = Territorio, y = Percentual, fill = Renda)) +
+  geom_bar(stat="identity") + 
+  ylim(0, 100) +
+  labs(title = "Critério por faixa de salário mínimo") +
+   theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+## Análise
+
+A pobreza e a extema pobreza com base na Linha Administrativa do Programa Bolsa Família representam, em conjunto, cerca de 9% da população brasileira. A pobreza e a extrema pobreza possuem proporções semelhantes, todavia, enquanto no centro-Sul elas não chegam a 5% da população, as regiões Norte e Nordeste possuem cerca de 20% da população nessas condições.
+
+Já a pobreza e a extrema pobreza com base na razão da renda per capita sobre o salário mínimo representam juntas 1/3 da população brasileira. Nas regiões Norte e Nordeste mais da metade d apopulação se encontra nessa condição, ao passo que nas demais nem 20% da população se encontra nessas faixas. Nas regiões Norte e nordeste a população de pobres e extremamente pobres são parelhas, mas nas demais regiões os extremamente pobres são duas vezes maior que a população de pobres.
+
+## Análise
+
+Por fim, as duas formas de mensurar a pobreza e a extrema pobreza possuem diferenças significativas quanto à sua magnitude. 
+
+Enquanto o salário mínimo em 2017 era de 937 reais, considerando 4 pessoas na familia (1/4 de salário minimo), haveria uma renda per capita domiciliar de 234 reais. 
+
+Já a renda per capita domiciliar para extrema pobreza da Linha Administrativa corresponde a 26% da renda percapita domiciliar por salário mínimo medidas diretamente pela PNAD Contínua . Assim, o Governo Federal cnsidera que a linha de extrema pobreza é de somente cerca de 1/8 de salário mínimo.
+
+
