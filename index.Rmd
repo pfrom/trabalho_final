@@ -5,7 +5,7 @@ date: "16 de outubro de 2018"
 output: ioslides_presentation
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
@@ -48,19 +48,19 @@ Serão utilizadas as seguintes fontes de dados:
 
 - Para calcular a pobreza como razão do salário mínimo foi utilizada a variável VD5003 (faixa de salário correspondente ao respectivo registro da PNAD Contínua).
 
-## Pobreza e Pobreza Extrema a partir da Linha Administrativa do Programa Bolsa Fam?lia
+## Pobreza e Pobreza Extrema a partir da Linha Administrativa do Programa Bolsa Família
 
 O Programa Bolsa Família (PBF) no ano de 2017 utilizava o corte de 85 reais domiciliar per capita como teto para determinar a extrema pobreza de uma família. 
 
-O teto da pobreza seria determinado pelo dobro disso, ou seja, 170 reais. Segundo esse padrão, para fins de gestão pública, todas as famílias com renda per capita que n?o atingem 85 reais recebem a complementação de renda que atinja esse valor. 
+O teto da pobreza seria determinado pelo dobro disso, ou seja, 170 reais. Segundo esse padrão, para fins de gestão pública, todas as famílias com renda per capita que não atingem 85 reais recebem a complementação de renda que atinja esse valor. 
 
-As famílias que estão com renda per capita domicliar entre 85 e 170 reais podem se benericiar do Programa caso se insiram em algumas condiçõees.
+As famílias que estão com renda per capita domicliar entre 85 e 170 reais podem se beneficiar do Programa caso se insiram em algumas condiçõees.
 
 ## Metodologia
 
 O arquivo base da PNAD Contínua 2017 será lido diretamente da URL do IBGE por meio do pacote 'PNAcIBGE'. O pacote 'dplyr será utilizado para tratamento da base e o pacote 'srvyr' será utilizado para expandir a amostra para a população. O pacote 'ggplot2' será utilizado para constuir os gráficos.
 
-Em síntese, a amostra (base original) será expandida para a população. Essa expansão será usada como fonte pars tratamento dos dados, ou seja, o cálculo da sproporções de pessoas na população com renda determinada por cada recorte. Os gráficos possibiltarão visualizar as proporções de Brasil e suas grandes regiões para fins de comparação. Po úlrimo, uma análise acerca das informações obtidas.
+Em síntese, a amostra (base original) será expandida para a população. Essa expansão será usada como fonte pars tratamento dos dados, ou seja, o cálculo da sproporções de pessoas na população com renda determinada por cada recorte. Os gráficos possibiltarão visualizar as proporções de Brasil e suas grandes regiões para fins de comparação. Po último, uma análise acerca das informações obtidas.
 
 
 ```{r}
@@ -104,7 +104,7 @@ ggplot(data=pobreza_la3, aes(x = Territorio, y = Percentual, fill = Renda)) +
 
 A PNAD Contínua possui uma variável (VD5003) que categoriza a amostra em faixas de renda domiciliar per capita.
 
-Existem ao todo 7 faixas de renda medidas na PNAD Contínua com base no salário mínimo: at? 1/4, de 1/4 a 1/2, de 1/2 a 1, de 1 a 2, de 2 a 3, de 3 a 5 e acima de 5 salários mínimos.
+Existem ao todo 7 faixas de renda medidas na PNAD Contínua com base no salário mínimo: até 1/4, de 1/4 a 1/2, de 1/2 a 1, de 1 a 2, de 2 a 3, de 3 a 5 e acima de 5 salários mínimos.
 
 Como critério usado na PNAD Contínua, a pobreza extrema e a pobreza s?o consideradas como sendo, respectivamente, de 1/4 e 1/2 salário mínimo per capita no domicííio. 
 
